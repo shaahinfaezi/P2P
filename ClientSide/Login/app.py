@@ -1,6 +1,7 @@
 import tkinter
 import customtkinter
-from Login.frames import MainFrame, RegisterFrame, LoggedInFrame
+from Login.frames import MainFrame, RegisterFrame, LoggedInFrame,PlayersFrame,MatchesFrame,GameInvitesFrame
+
 
 customtkinter.set_appearance_mode("System")
 customtkinter.set_default_color_theme("blue")
@@ -23,11 +24,11 @@ class MainApp(customtkinter.CTk):
         # Change the window geometry
         self.title(new_title)
 
-    def open_loggedin_frame(self):
+    def open_loggedin_frame(self,players,matches):
         # Destroy the Main frame and open the LoggedIn frame
         self.main_frame.destroy()
         # Start logged in frame
-        self.loggedin_frame = LoggedInFrame(self)
+        self.loggedin_frame = LoggedInFrame(self,players,matches)
         self.frames["loggedin_frame"] = self.loggedin_frame
         self.loggedin_frame.pack(expand=True, fill="both") # Expand to fill the main app window
 
@@ -52,3 +53,33 @@ class MainApp(customtkinter.CTk):
         for frame_name, frame in self.frames.items():
             frame.destroy()
         self.frames = {}  # Clear the dictionary
+
+
+
+
+    def showPlayers(self,players):
+        self.destroy_all_frames()
+        self.playersFrame = PlayersFrame(self,players)
+        self.frames["player_frame"] = self.playersFrame
+        self.playersFrame.pack(fill="both", expand=True)
+
+
+
+    def showMatches(self,matches):
+        self.destroy_all_frames()
+        self.matchesFrame = MatchesFrame(self,matches)
+        self.frames["match_frame"] = self.matchesFrame
+        self.matchesFrame.pack(fill="both", expand=True)
+
+    def showGameInvites(self,invites):
+        self.GameInvitesFrame = GameInvitesFrame(self,invites)
+        self.frames["game_frame"] = self.GameInvitesFrame
+        self.GameInvitesFrame.pack(fill="both", expand=True)
+
+
+
+
+
+
+
+

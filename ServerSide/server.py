@@ -4,6 +4,16 @@ from models import *
 import pickle 
 from log import log
 from reply import Reply
+from request import Request
+
+
+def get_key(val,dict):
+   
+    for key, value in dict.items():
+        if value[0] == val:
+            return key
+ 
+    return "key doesn't exist"
 
 
 PORT = 5555
@@ -19,48 +29,89 @@ except socket.error as e:
     str(e)
 
 clients = set()
-clients_lock = threading.Lock()
 
+players=[]
+matches=[]
 
+playerDict={}
+
+GameInvites={}
 
 def server_reply(client,obj):
     message = pickle.dumps(obj)
-    client.send(message)
-
+    try:
+        client.send(message)
+    except socket.error as e:
+        str(e)
 def handle_client(conn, addr):
     print(f"[NEW CONNECTION] {addr} Connected")
 
-    try:
-        connected = True
-        while connected:
+    connected = True
+    user=""
+    while connected:
+        try:
             rec=conn.recv(2048)
             if not rec:
-                break
+                continue
             obj = pickle.loads(rec)
             if not obj:
-                break
+                continue
 
-                # if msg == DISCONNECT_MESSAGE:
-                #     connected = False
+            if obj.name=="Reply":
+                if obj.msg=="Disconnected":
+                    break
+                elif obj.msg=="Invites":
+                    value = get_key(conn,playerDict)
+                    req=GameInvites.get(value)
+                    server_reply(conn,req)
+
             if obj.name=="Login":
-                if serverDb.count_documents({"Username":obj.user,"Password":obj.password})>0:
-                    msg=Reply("Success")
+                if serverDb.count_documents({"Username":obj.user,"Password":obj.password})>0 and obj.user not in players:
+                    msg=Reply("Success",players,matches)
+                    server_reply(conn,msg)
+                    players.append(obj.user)
+                    playerDict[obj.user]=[conn,addr]
+                    GameInvites[obj.user]=[]
+                    user=obj.user
+
+                else:
+                    msg=Reply("Fail",[],[])
+                    server_reply(conn,msg)
+            elif obj.name=="Register":
+                if serverDb.count_documents({"Firstname":obj.fn,"Lastname":obj.ln,"Username":obj.user,"Password":obj.password})>0:
+                    msg=Reply("Exists",[],[])
                     server_reply(conn,msg)
                 else:
-                    msg=Reply("Fail")
+                    serverDb.insert_one({"Firstname":obj.fn,"Lastname":obj.ln,"Username":obj.user,"Password":obj.password})
+                    msg=Reply("Added",[],[])
                     server_reply(conn,msg)
+            elif obj.name=="Request":
+                opp=playerDict.get(obj.msg)
+                pl=get_key(conn,playerDict)
+                req=Request(pl,addr,opp[1])
+                GameInvites[obj.msg].append(req)
+                msg=Reply("Request sent.",[],[])
+                server_reply(conn,msg)
+                    
 
 
 
 
             print(f"Recieved : [{addr}] {obj.name}")
-    
+        except socket.error as e:
+            str(e)
+            print(f"Lost connection : {e}")
+            break
 
-    finally:
-        with clients_lock:
-            clients.remove(conn)
+    try:
+        print(f"Removed {user}")
+        players.remove(user)
+        clients.remove(conn)
+    except:
+        print('Remove failed')
 
-        conn.close()
+    print("connection closed")     
+    conn.close()
 
 
 def start():
@@ -68,8 +119,7 @@ def start():
     server.listen()
     while True:
         conn, addr = server.accept()
-        with clients_lock:
-            clients.add(conn)
+        clients.add(conn)
         thread = threading.Thread(target=handle_client, args=(conn, addr))
         thread.start()
 

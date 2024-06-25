@@ -1,8 +1,9 @@
 import tkinter
 import customtkinter
-from Login.functions import is_valid_chars_space, is_valid_chars, toggle_password, register_user, check_login, generate_temporary_password
+from Login.functions import is_valid_chars_space, is_valid_chars, toggle_password, register_user, check_login, generate_temporary_password,request,getInvites
 from PIL import ImageTk, Image
 from tkinter import messagebox
+from CTkListbox import *
 
 class MainFrame(customtkinter.CTkFrame):
     def __init__(self, master):
@@ -53,9 +54,10 @@ class MainFrame(customtkinter.CTkFrame):
         password = self.p_block.get()
 
         # Call the check_login function from functions.py
-        if check_login(username, password):
+        status,players,matches=check_login(username, password)
+        if status:
             # Login successful, open LoggedInFrame
-            self.master.open_loggedin_frame()
+            self.master.open_loggedin_frame(players,matches)
         else:
             # Login failed, show an error message
             self.error_label.configure(text="Invalid username or password. Please try again.")
@@ -134,21 +136,83 @@ class RegisterFrame(customtkinter.CTkFrame):
             print("Registration successful!")
             messagebox.showinfo("Success", "Registration was successful!")
             self.registration_frame.place_forget()
+            self.master.open_main_frame()
             return
         else:
             # Handle the case where the username or email is already taken
             print("Username is already in use.")
-            messagebox.showerror("Error", "The username or e-mail already exists.")
+            messagebox.showerror("Error", "The username already exists.")
             return
 
 
 
 class LoggedInFrame(customtkinter.CTkFrame):
-    def __init__(self, master):
+    def __init__(self, master,players,matches):
         super().__init__(master)
         self.master = master
+        self.players=players
+        self.matches=matches
         self.setup_loggedin_frame()
 
+
     def setup_loggedin_frame(self):
-        self.master.change_geometry("1280x720")
-        pass
+        self.master.change_geometry("1920x1080")
+        self.player_button = customtkinter.CTkButton(master=self.master, width=400, text="Player", corner_radius=6, fg_color="#3498db", text_color="#ffffff", hover_color="#2980b9", command= lambda: self.master.showPlayers(self.players))
+        self.player_button.place(x=400, y=270)
+        
+        self.match_button = customtkinter.CTkButton(master=self.master, width=400, text="Viewer", corner_radius=6, fg_color="#3498db", text_color="#ffffff", hover_color="#2980b9", command= lambda: self.master.showMatches(self.matches))
+        self.match_button.place(x=1120, y=270)
+
+class PlayersFrame(customtkinter.CTkFrame):
+    def __init__(self,master,players):
+        super().__init__(master)
+        self.master = master
+        self.players=players
+        self.setup_player_frame()
+
+    def setup_player_frame(self):
+        self.master.change_geometry("1920x1080")
+        listbox = CTkListbox(self.master)
+        listbox.pack(fill="both", expand=True)
+        for i in range(len(self.players)):
+            listbox.insert(i,self.players[i])
+        listbox.select_multiple=False
+        self.request_button = customtkinter.CTkButton(master=self.master, width=400, text="Request to play", corner_radius=6, fg_color="#3498db", text_color="#ffffff", hover_color="#2980b9", command= lambda: request(listbox.get(listbox.curselection())))
+        self.request_button.place(x=400, y=670)
+        self.invites_button = customtkinter.CTkButton(master=self.master, width=400, text="Game Invites", corner_radius=6, fg_color="#3498db", text_color="#ffffff", hover_color="#2980b9", command= lambda: self.master.showGameInvites(getInvites()))
+        self.invites_button.place(x=1120, y=670)
+ 
+
+        
+class MatchesFrame(customtkinter.CTkFrame):
+    def __init__(self, master,matches):
+        super().__init__(master)
+        self.master = master
+        self.matches=matches
+        self.setup_match_frame()
+
+    def setup_match_frame(self):
+        self.master.change_geometry("1920x1080")
+        listbox = CTkListbox(self.master)
+        listbox.pack(fill="both", expand=True)
+        for i in range(len(self.matches)):
+            listbox.insert(i,self.matches[i])
+        # self.watch_button = customtkinter.CTkButton(master=self.master, width=400, text="Watch", corner_radius=6, fg_color="#3498db", text_color="#ffffff", hover_color="#2980b9", command= lambda: )
+        # self.watch_button.place(x=760, y=670)
+class GameInvitesFrame(customtkinter.CTkFrame):
+    def __init__(self, master,invites):
+        super().__init__(master)
+        self.master = master
+        self.invites=invites
+        self.setup_invite_frame()
+
+    def setup_invite_frame(self):
+        self.master.change_geometry("960x540")
+        listbox = CTkListbox(self.master)
+        listbox.pack(fill="both", expand=True)
+        for i in range(len(self.invites)):
+            listbox.insert(i,self.invites[i].msg)
+        listbox.select_multiple=False
+        # self.request_button = customtkinter.CTkButton(master=self.master, width=400, text="Accept", corner_radius=6, fg_color="#3498db", text_color="#ffffff", hover_color="#2980b9", command= lambda: accept(listbox.get(listbox.curselection())))
+        # self.request_button.place(x=380, y=340)
+

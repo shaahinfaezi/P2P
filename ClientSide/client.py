@@ -8,13 +8,15 @@ SERVER = "localhost"
 ADDR = (SERVER, PORT)
 FORMAT = "utf-8"
 DISCONNECT_MESSAGE = "!DISCONNECT"
-
-
+client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 def connect():
-    client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    client.connect(ADDR)
-    return client
+    try:
+        client.connect(ADDR)
+    except socket.error as e:
+        str(e)
+        print(f"Couldnt connect : {e}")
+
 
 def disconnect(client):
     client.close()
