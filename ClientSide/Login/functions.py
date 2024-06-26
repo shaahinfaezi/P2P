@@ -6,7 +6,12 @@ from client import *
 from reply import Reply
 from Register import Register
 from request import Request
+from p2p import *
+from TTT import TicTacToe
+import threading
 
+
+invites=[]
 
 def toggle_password(p_block, show_password_var):
     if show_password_var.get():
@@ -36,8 +41,36 @@ def check_login(username, password):
     else:
         return False,[],[]
     
+def findInv(user):
+    for item in invites:
+        if item.msg==user:
+            return item
+
+
+def accept(user):
+    req=findInv(user)
+    pack=Request("Accept",req.source,req.dest)
+    pack.name="Accept"
+    try:
+        send(client,pack)
+    except socket.error as e:
+        str(e)
+    print(req.source)
+    clientConnect(req.source)
+    re=clientRecieve()
+    turn=1
+    if re.msg=="x":
+        turn=1
+    elif re.msg=="o":
+        turn=2
+
+    TicTacToe(turn)
+
+
+
     
 
+    
 
 def register_user(first_name, last_name, username, password):
     newAcc=Register(first_name, last_name, username, password)
@@ -68,6 +101,7 @@ def request(user):
     try:
         rep=recieve(client)
         print(rep.msg)
+        serverBind(rep.source)
     except socket.error as e:
         str(e)
     
@@ -78,6 +112,7 @@ def getInvites():
     except socket.error as e:
         str(e)
     try:
+        global invites
         invites=recieve(client)
         return invites
     except socket.error as e:

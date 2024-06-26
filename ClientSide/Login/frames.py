@@ -1,6 +1,6 @@
 import tkinter
 import customtkinter
-from Login.functions import is_valid_chars_space, is_valid_chars, toggle_password, register_user, check_login, generate_temporary_password,request,getInvites
+from Login.functions import is_valid_chars_space, is_valid_chars, toggle_password, register_user, check_login, generate_temporary_password,request,getInvites,accept
 from PIL import ImageTk, Image
 from tkinter import messagebox
 from CTkListbox import *
@@ -178,9 +178,9 @@ class PlayersFrame(customtkinter.CTkFrame):
             listbox.insert(i,self.players[i])
         listbox.select_multiple=False
         self.request_button = customtkinter.CTkButton(master=self.master, width=400, text="Request to play", corner_radius=6, fg_color="#3498db", text_color="#ffffff", hover_color="#2980b9", command= lambda: request(listbox.get(listbox.curselection())))
-        self.request_button.place(x=400, y=670)
+        self.request_button.place(x=400, y=470)
         self.invites_button = customtkinter.CTkButton(master=self.master, width=400, text="Game Invites", corner_radius=6, fg_color="#3498db", text_color="#ffffff", hover_color="#2980b9", command= lambda: self.master.showGameInvites(getInvites()))
-        self.invites_button.place(x=1120, y=670)
+        self.invites_button.place(x=1120, y=470)
  
 
         
@@ -200,19 +200,20 @@ class MatchesFrame(customtkinter.CTkFrame):
         # self.watch_button = customtkinter.CTkButton(master=self.master, width=400, text="Watch", corner_radius=6, fg_color="#3498db", text_color="#ffffff", hover_color="#2980b9", command= lambda: )
         # self.watch_button.place(x=760, y=670)
 class GameInvitesFrame(customtkinter.CTkFrame):
-    def __init__(self, master,invites):
+    def __init__(self, master,invites,first):
         super().__init__(master)
         self.master = master
         self.invites=invites
-        self.setup_invite_frame()
+        self.setup_invite_frame(first)
 
-    def setup_invite_frame(self):
-        self.master.change_geometry("960x540")
+    def setup_invite_frame(self,first):
+        self.master.change_geometry("1920x1080")
         listbox = CTkListbox(self.master)
-        listbox.pack(fill="both", expand=True)
+        if first==False:
+            listbox.pack(fill="both", expand=True)
         for i in range(len(self.invites)):
             listbox.insert(i,self.invites[i].msg)
         listbox.select_multiple=False
-        # self.request_button = customtkinter.CTkButton(master=self.master, width=400, text="Accept", corner_radius=6, fg_color="#3498db", text_color="#ffffff", hover_color="#2980b9", command= lambda: accept(listbox.get(listbox.curselection())))
-        # self.request_button.place(x=380, y=340)
+        self.request_button = customtkinter.CTkButton(master=self.master, width=200, text="Accept", corner_radius=6, fg_color="#3498db", text_color="#ffffff", hover_color="#2980b9", command= lambda: accept(listbox.get(listbox.curselection())))
+        self.request_button.place(x=880, y=840)
 

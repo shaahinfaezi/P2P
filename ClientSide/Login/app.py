@@ -6,6 +6,8 @@ from Login.frames import MainFrame, RegisterFrame, LoggedInFrame,PlayersFrame,Ma
 customtkinter.set_appearance_mode("System")
 customtkinter.set_default_color_theme("blue")
 
+
+first=False
 class MainApp(customtkinter.CTk):
     def __init__(self):
         super().__init__()
@@ -72,9 +74,12 @@ class MainApp(customtkinter.CTk):
         self.matchesFrame.pack(fill="both", expand=True)
 
     def showGameInvites(self,invites):
-        self.GameInvitesFrame = GameInvitesFrame(self,invites)
+        global first
+        self.GameInvitesFrame = GameInvitesFrame(self,invites,first)
         self.frames["game_frame"] = self.GameInvitesFrame
-        self.GameInvitesFrame.pack(fill="both", expand=True)
+        if first==False:
+            self.GameInvitesFrame.pack(fill="both", expand=True,side="top")
+        first=True
 
 
 

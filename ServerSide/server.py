@@ -90,8 +90,11 @@ def handle_client(conn, addr):
                 pl=get_key(conn,playerDict)
                 req=Request(pl,addr,opp[1])
                 GameInvites[obj.msg].append(req)
-                msg=Reply("Request sent.",[],[])
+                msg=Request("Request sent.",addr,[])
                 server_reply(conn,msg)
+            elif obj.name=="Accept":
+                pass
+            
                     
 
 
