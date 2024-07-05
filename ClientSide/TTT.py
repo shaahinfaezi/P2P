@@ -1,12 +1,14 @@
 import pygame
 import math
 from p2p import *
+import threading
 
 pygame.init()
 
 # Screen
 WIDTH = 300
 ROWS = 3
+global win
 win = None
 
 
@@ -24,6 +26,13 @@ O_IMAGE = pygame.transform.scale(pygame.image.load("ClientSide/images/o.png"), (
 # Fonts
 END_FONT = pygame.font.SysFont('arial', 40)
 
+
+global Client
+global Role
+global Turn
+global moveTurn
+global run
+moveTurn=1
 
 def draw_grid():
     gap = WIDTH // ROWS
@@ -55,6 +64,15 @@ def initialize_grid():
 
     return game_array
 
+class Move():
+    def __init__(self,x,y,xo,i,j):
+        self.name="Move"
+        self.x=x
+        self.y=y
+        self.xo=xo
+        self.i=i
+        self.j=j
+
 
 def click(game_array):
     global x_turn, o_turn, images
@@ -69,19 +87,34 @@ def click(game_array):
             # Distance between mouse and the centre of the square
             dis = math.sqrt((x - m_x) ** 2 + (y - m_y) ** 2)
 
+            global moveTurn
             # If it's inside the square
             if dis < WIDTH // ROWS // 2 and can_play:
-                if x_turn:  # If it's X's turn
+                if moveTurn==1:  # If it's X's turn
+                    moveTurn=2
                     images.append((x, y, X_IMAGE))
                     x_turn = False
                     o_turn = True
                     game_array[i][j] = (x, y, 'x', False)
+                    move=Move(x,y,"x",i,j)
+                    if Role=="client":
+                        clientSend(move)
+                    else:
+                        server_reply(Client,move)
+                    return
 
-                elif o_turn:  # If it's O's turn
+                elif moveTurn==2:  # If it's O's turn
+                    moveTurn=1
                     images.append((x, y, O_IMAGE))
                     x_turn = True
                     o_turn = False
                     game_array[i][j] = (x, y, 'o', False)
+                    move=Move(x,y,"o",i,j)
+                    if Role=="client":
+                        clientSend(move)
+                    else:
+                        server_reply(Client,move)
+                    return 
 
 
 # Checking if someone has won
@@ -122,12 +155,11 @@ def has_drawn(game_array):
 
 
 def display_message(content):
-    pygame.time.delay(500)
     win.fill(BLACK)
     end_text = END_FONT.render(content, 1, "#669BBC")
     win.blit(end_text, ((WIDTH - end_text.get_width()) // 2, (WIDTH - end_text.get_height()) // 2))
     pygame.display.update()
-    pygame.time.delay(3000)
+    pygame.time.delay(1000)
 
 
 def render():
@@ -142,16 +174,43 @@ def render():
     pygame.display.update()
 
 
-def TicTacToe(turn):
-    print(turn)
+def handle_peer(role,client):
+    global run
+    global Turn
+    global obj
+    while run:
+            try:
+                if role=="client":
+                    obj=clientRecieve()
+                else:
+                    rec=client.recv(2048)
+                    if not rec:
+                        continue
+                    obj = pickle.loads(rec)
+                    if not obj:
+                        continue
+            except socket.error as e:
+                print(e)
+
+def TicTacToe(turn,role,client=None):
+    global Client
+    Client=client
+    global Role
+    Role=role
+    global Turn
+    Turn=turn
     global win
+
+    global moveTurn
+
     win=pygame.display.set_mode((WIDTH, WIDTH))
-    pygame.display.set_caption("TicTacToe")
+    pygame.display.set_caption(f"TTT Turn : {turn} Role : {role} ")
     global x_turn, o_turn, images, draw
 
     images = []
     draw = False
 
+    global run
     run = True
 
     x_turn = True
@@ -159,15 +218,43 @@ def TicTacToe(turn):
 
     game_array = initialize_grid()
 
+    global obj
+    obj=None
+
+    thread = threading.Thread(target=handle_peer, args=(role,client))
+    thread.start()
+
     while run:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
             if event.type == pygame.MOUSEBUTTONDOWN:
-                click(game_array)
+                if moveTurn==turn:
+                    click(game_array)
+
+        
+
+        if moveTurn!=Turn:
+                if obj is not None:
+                    
+                    if obj.name=="Move":
+                        if obj.xo=="x":
+                            images.append((obj.x, obj.y, X_IMAGE))
+                            moveTurn=2
+                            # x_turn = False
+                            # o_turn = True
+                            game_array[obj.i][obj.j] = (obj.x, obj.y, 'x', False)
+                        elif obj.xo=="o":
+                            moveTurn=1
+                            images.append((obj.x, obj.y,O_IMAGE))
+                            # x_turn = True
+                            # o_turn = False
+                            game_array[obj.i][obj.j] = (obj.x, obj.y, 'o', False)
+                        obj=None
 
         render()
 
         if has_won(game_array) or has_drawn(game_array):
             run = False
+            exit()
 

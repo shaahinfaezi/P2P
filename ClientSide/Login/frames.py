@@ -214,6 +214,6 @@ class GameInvitesFrame(customtkinter.CTkFrame):
         for i in range(len(self.invites)):
             listbox.insert(i,self.invites[i].msg)
         listbox.select_multiple=False
-        self.request_button = customtkinter.CTkButton(master=self.master, width=200, text="Accept", corner_radius=6, fg_color="#3498db", text_color="#ffffff", hover_color="#2980b9", command= lambda: accept(listbox.get(listbox.curselection())))
+        self.request_button = customtkinter.CTkButton(master=self.master, width=200, text="Accept", corner_radius=6, fg_color="#3498db", text_color="#ffffff", hover_color="#2980b9", command= lambda: accept(listbox.get(listbox.curselection()),listbox))
         self.request_button.place(x=880, y=840)
 

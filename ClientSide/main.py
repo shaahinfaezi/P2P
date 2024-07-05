@@ -24,11 +24,13 @@ def handle_client():
             if turn==1:
                 re=Reply("x",[],[])
                 server_reply(conn,re)
+                TicTacToe(2,"server",conn)
             else:
                 re=Reply("o",[],[])
                 server_reply(conn,re)
+                TicTacToe(1,"server",conn)
 
-            TicTacToe(turn)
+            
 
             return
             

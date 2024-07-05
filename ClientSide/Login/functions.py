@@ -9,7 +9,11 @@ from request import Request
 from p2p import *
 from TTT import TicTacToe
 import threading
-
+from PIL import ImageTk, Image
+from tkinter import messagebox
+from CTkListbox import *
+import tkinter
+import customtkinter
 
 invites=[]
 
@@ -47,8 +51,14 @@ def findInv(user):
             return item
 
 
-def accept(user):
+def accept(user,listbox:CTkListbox):
+    if user is None:
+        print("Select first!")
+        return
     req=findInv(user)
+  
+
+    listbox.delete(listbox.curselection())
     pack=Request("Accept",req.source,req.dest)
     pack.name="Accept"
     try:
@@ -64,7 +74,7 @@ def accept(user):
     elif re.msg=="o":
         turn=2
 
-    TicTacToe(turn)
+    TicTacToe(turn,"client")
 
 
 
