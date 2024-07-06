@@ -39,11 +39,13 @@ server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 readyToAccept=False
 
 def serverBind(addr):
+
     global readyToAccept
     readyToAccept=True
     try:
         server.bind(addr)
         server.listen(2)
+        print(f"Socket binded to the address : {addr}")
 
     except socket.error as e:
         str(e)
@@ -59,4 +61,6 @@ def server_reply(client,obj):
         client.send(message)
     except socket.error as e:
         str(e)
+def serverDisconnect():
+    server.close()
 

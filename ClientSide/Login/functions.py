@@ -7,13 +7,15 @@ from reply import Reply
 from Register import Register
 from request import Request
 from p2p import *
-from TTT import TicTacToe
+from TTT import TicTacToe,TicTacToe_Viewer
 import threading
 from PIL import ImageTk, Image
 from tkinter import messagebox
 from CTkListbox import *
 import tkinter
 import customtkinter
+import bcrypt
+from Matches import Match
 
 invites=[]
 
@@ -50,6 +52,30 @@ def findInv(user):
         if item.msg==user:
             return item
 
+def watch(match,matches):
+    matchid=None
+    p1=None
+    p2=None
+    for item in matches:
+        if f"{item.p1} Vs {item.p2}"==match:
+            matchid=pickle.loads(item.matchId)
+            p1=item.p1
+            p2=item.p2
+            print(matchid)
+            break
+    mat=Match(p1,p2,None,matchid)
+    mat.name="Watch"
+    try:
+        send(client,mat)
+    except socket.error as e:
+        str(e)
+    try:
+        rep=recieve(client)
+        TicTacToe_Viewer(p1,p2,matchid,client,rep)
+    except socket.error as e:
+        str(e)
+
+
 
 def accept(user,listbox:CTkListbox):
     if user is None:
@@ -65,6 +91,10 @@ def accept(user,listbox:CTkListbox):
         send(client,pack)
     except socket.error as e:
         str(e)
+    try:
+        rep=recieve(client)
+    except socket.error as e:
+        str(e)
     print(req.source)
     clientConnect(req.source)
     re=clientRecieve()
@@ -74,8 +104,13 @@ def accept(user,listbox:CTkListbox):
     elif re.msg=="o":
         turn=2
 
-    TicTacToe(turn,"client")
+    TicTacToe(turn,"client",rep.players,None)
+    
 
+def hash_password(password):
+    salt = bcrypt.gensalt()
+    hashed_password = bcrypt.hashpw(password.encode('utf-8'), salt)
+    return hashed_password
 
 
     
@@ -83,7 +118,8 @@ def accept(user,listbox:CTkListbox):
     
 
 def register_user(first_name, last_name, username, password):
-    newAcc=Register(first_name, last_name, username, password)
+    hashed_password=hash_password(password)
+    newAcc=Register(first_name, last_name, username, hashed_password)
     connection = client
     try:
         send(connection,newAcc)

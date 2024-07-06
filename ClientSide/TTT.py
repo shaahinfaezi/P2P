@@ -2,6 +2,9 @@ import pygame
 import math
 from p2p import *
 import threading
+from client import *
+from Matches import Match
+from reply import Reply
 
 pygame.init()
 
@@ -32,6 +35,7 @@ global Role
 global Turn
 global moveTurn
 global run
+global MatchID
 moveTurn=1
 
 def draw_grid():
@@ -99,6 +103,13 @@ def click(game_array):
                     move=Move(x,y,"x",i,j)
                     if Role=="client":
                         clientSend(move)
+                        rep=Reply(game_array,MatchID,[])
+                        rep.name="Grid"
+                        try:
+                            send(client,rep)
+                        except socket.error as e:
+                            str(e)
+
                     else:
                         server_reply(Client,move)
                     return
@@ -174,7 +185,7 @@ def render():
     pygame.display.update()
 
 
-def handle_peer(role,client):
+def handle_peer(role,client__):
     global run
     global Turn
     global obj
@@ -183,7 +194,7 @@ def handle_peer(role,client):
                 if role=="client":
                     obj=clientRecieve()
                 else:
-                    rec=client.recv(2048)
+                    rec=client__.recv(2048)
                     if not rec:
                         continue
                     obj = pickle.loads(rec)
@@ -192,7 +203,9 @@ def handle_peer(role,client):
             except socket.error as e:
                 print(e)
 
-def TicTacToe(turn,role,client=None):
+def TicTacToe(turn,role,matchID,client):
+    global MatchID
+    MatchID=matchID
     global Client
     Client=client
     global Role
@@ -256,5 +269,58 @@ def TicTacToe(turn,role,client=None):
 
         if has_won(game_array) or has_drawn(game_array):
             run = False
-            exit()
+            if Role=="client":
+                clientDisconnect()
+            elif Role=="server":
+                serverDisconnect()
+            quit()
+            return
+        
+def TicTacToe_Viewer(p1,p2,matchId,clienT,grid):
+
+    global win
+    win=pygame.display.set_mode((WIDTH, WIDTH))
+    pygame.display.set_caption(f"{p1} Vs {p2}")
+
+    game_array = initialize_grid()
+
+    run = True
+
+    global x_turn, o_turn, images, draw
+
+    images = []
+    draw = False
+    while run:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+
+        pygame.time.wait(2000)
+
+        mat=Match(p1,p2,None,matchId)
+        mat.name="Watch"
+        try:
+            send(clienT,mat)
+        except socket.error as e:
+            str(e)
+        try:
+            grid=recieve(clienT)
+            print(grid)
+        except socket.error as e:
+            str(e)
+
+        for i in range(len(game_array)):
+            for j in range(len(game_array[i])):
+                if grid[i][j][2]=="o":
+                    images.append((grid[i][j][0], grid[i][j][1],O_IMAGE))
+                elif grid[i][j][2]=="x":
+                    images.append((grid[i][j][0], grid[i][j][1],X_IMAGE))
+                game_array[i][j]=grid[i][j]
+
+            
+        render()
+
+        if has_won(game_array) or has_drawn(game_array):
+            quit()
+            return        
 
