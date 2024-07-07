@@ -71,7 +71,10 @@ def watch(match,matches):
         str(e)
     try:
         rep=recieve(client)
-        TicTacToe_Viewer(p1,p2,matchid,client,rep)
+        if rep.msg=="Grid":
+            TicTacToe_Viewer(p1,p2,matchid,client,rep.players)
+        else:
+            print(rep.msg)
     except socket.error as e:
         str(e)
 

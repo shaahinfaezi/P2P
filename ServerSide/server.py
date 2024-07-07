@@ -88,6 +88,8 @@ def handle_client(conn, addr):
                     value = get_key(conn,playerDict,0)
                     req=GameInvites.get(value)
                     server_reply(conn,req)
+                elif obj.msg=="Finish":
+                    matchDb.update_one({"matchId":pickle.dumps(obj.players)},{"$set": { "state": "off" }})
 
             if obj.name=="Login":
                 if serverDb.count_documents({"Username":obj.user})>0 and obj.user not in players:
@@ -133,10 +135,15 @@ def handle_client(conn, addr):
             elif obj.name=="Watch":
                 mat=matchDb.find_one({"p1":obj.p1,"p2":obj.p2})
                 if pickle.loads(mat["matchId"])==obj.matchId:
-                    Grid=pickle.loads(mat["grid"])
-                    server_reply(conn,Grid)
+                    if mat["state"]=="off":
+                        rep=Reply("Match has ended!",[],[])
+                        server_reply(conn,rep)
+                    else:
+                        Grid=pickle.loads(mat["grid"])
+                        rep=Reply("Grid",Grid,[])
+                        server_reply(conn,rep)
             elif obj.name=="Grid":
-                matchDb.update_one({"matchId":pickle.dumps(obj.players)},{"grid": pickle.dumps(obj.msg)})
+                matchDb.update_one({"matchId":pickle.dumps(obj.players)},{"$set": { "grid": pickle.dumps(obj.msg) }})
                 #add reply
                 
             

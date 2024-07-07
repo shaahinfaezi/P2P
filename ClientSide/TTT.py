@@ -38,6 +38,8 @@ global run
 global MatchID
 moveTurn=1
 
+global game_array
+
 def draw_grid():
     gap = WIDTH // ROWS
 
@@ -103,13 +105,6 @@ def click(game_array):
                     move=Move(x,y,"x",i,j)
                     if Role=="client":
                         clientSend(move)
-                        rep=Reply(game_array,MatchID,[])
-                        rep.name="Grid"
-                        try:
-                            send(client,rep)
-                        except socket.error as e:
-                            str(e)
-
                     else:
                         server_reply(Client,move)
                     return
@@ -189,6 +184,7 @@ def handle_peer(role,client__):
     global run
     global Turn
     global obj
+    global game_array
     while run:
             try:
                 if role=="client":
@@ -203,11 +199,24 @@ def handle_peer(role,client__):
             except socket.error as e:
                 print(e)
 
-def TicTacToe(turn,role,matchID,client):
+def View():
+    global run
+    global game_array
+    global MatchID
+    while run:
+        pygame.time.wait(500)
+        rep=Reply(game_array,MatchID,[])
+        rep.name="Grid"
+        try:
+            send(client,rep)
+        except socket.error as e:
+            str(e)
+
+def TicTacToe(turn,role,matchID,clientt):
     global MatchID
     MatchID=matchID
     global Client
-    Client=client
+    Client=clientt
     global Role
     Role=role
     global Turn
@@ -229,13 +238,17 @@ def TicTacToe(turn,role,matchID,client):
     x_turn = True
     o_turn = False
 
+    global game_array
     game_array = initialize_grid()
 
     global obj
     obj=None
 
-    thread = threading.Thread(target=handle_peer, args=(role,client))
+    thread = threading.Thread(target=handle_peer, args=(role,clientt))
     thread.start()
+
+    threadview = threading.Thread(target=View, args=())
+    threadview.start()
 
     while run:
         for event in pygame.event.get():
@@ -270,10 +283,15 @@ def TicTacToe(turn,role,matchID,client):
         if has_won(game_array) or has_drawn(game_array):
             run = False
             if Role=="client":
-                clientDisconnect()
+                rep=Reply("Finish",matchID,[])
+                try:
+                    send(client,rep)
+                except socket.error as e:
+                        str(e)
             elif Role=="server":
                 serverDisconnect()
-            quit()
+            pygame.display.quit()
+            quit(1)
             return
         
 def TicTacToe_Viewer(p1,p2,matchId,clienT,grid):
@@ -295,7 +313,7 @@ def TicTacToe_Viewer(p1,p2,matchId,clienT,grid):
             if event.type == pygame.QUIT:
                 pygame.quit()
 
-        pygame.time.wait(2000)
+        pygame.time.wait(1000)
 
         mat=Match(p1,p2,None,matchId)
         mat.name="Watch"
@@ -305,7 +323,7 @@ def TicTacToe_Viewer(p1,p2,matchId,clienT,grid):
             str(e)
         try:
             grid=recieve(clienT)
-            print(grid)
+            grid=grid.players
         except socket.error as e:
             str(e)
 
@@ -321,6 +339,7 @@ def TicTacToe_Viewer(p1,p2,matchId,clienT,grid):
         render()
 
         if has_won(game_array) or has_drawn(game_array):
-            quit()
+            pygame.display.quit()
+            quit(1)
             return        
 

@@ -15,8 +15,7 @@ def clientConnect(addr):
         print(f"Couldnt connect : {e}")
 
 
-def clientDisconnect():
-    client_.close()
+
 
 
 
